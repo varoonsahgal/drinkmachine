@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Coffee Drink Machine</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 900px; margin: 40px auto; padding: 0 20px; background: #f5f0eb; }
+    h1 { color: #4a2c2a; }
+    h2 { color: #6b3f2a; margin-top: 30px; }
+    .message { padding: 10px 16px; border-radius: 4px; margin-bottom: 16px; font-weight: bold; background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+    .message.error { background: #f8d7da; color: #721c24; border-color: #f5c6cb; }
+    .drinks { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; }
+    .drink-card { background: white; border-radius: 8px; padding: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+    .drink-card h3 { margin: 0 0 8px; color: #4a2c2a; font-size: 1rem; }
+    .drink-card .cost { color: #6b3f2a; font-size: 0.9rem; }
+    .drink-card button { margin-top: 10px; width: 100%; padding: 8px; border: none; border-radius: 4px; cursor: pointer; font-size: 0.9rem; }
+    .drink-card button.available { background: #6b3f2a; color: white; }
+    .drink-card button.available:hover { background: #4a2c2a; }
+    .drink-card button.unavailable { background: #ccc; color: #666; cursor: not-allowed; }
+    .ingredients { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 10px; }
+    .ingredient { background: white; border-radius: 4px; padding: 10px 14px; display: flex; justify-content: space-between; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+    .ingredient .name { color: #4a2c2a; }
+    .ingredient .stock { font-weight: bold; color: #6b3f2a; }
+    #restock-btn { margin-top: 24px; padding: 10px 24px; background: #4a2c2a; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 1rem; }
+    #restock-btn:hover { background: #6b3f2a; }
+  </style>
+</head>
+<body>
+  <h1>☕ Coffee Drink Machine</h1>
+  <div id="message"></div>
+
+  <h2>Drinks</h2>
+  <div id="drinks" class="drinks"></div>
+
+  <h2>Ingredients</h2>
+  <div id="ingredients" class="ingredients"></div>
+
+  <button id="restock-btn" onclick="restock()">Restock Ingredients</button>
+
+  <script>
+    async function loadData() {
+      const [drinksRes, ingredientsRes] = await Promise.all([
+        fetch('/api/drinks'),
+        fetch('/api/ingredients')
+      ]);
+      const drinks = await drinksRes.json();
+      const ingredients = await ingredientsRes.json();
+      renderDrinks(drinks);
+      renderIngredients(ingredients);
+    }
+
+    function renderDrinks(drinks) {
+      const container = document.getElementById('drinks');
+      container.innerHTML = drinks.map(d => `
+        <div class="drink-card">
+          <h3>${d.name}</h3>
+          <div class="cost">$${d.cost.toFixed(2)}</div>
+          <button class="${d.makeable ? 'available' : 'unavailable'}"
+            onclick="${d.makeable ? `makeDrink('${encodeURIComponent(d.name)}')` : ''}"
+            ${d.makeable ? '' : 'disabled'}>
+            ${d.makeable ? 'Order' : 'Out of Stock'}
+          </button>
+        </div>`).join('');
+    }
+
+    function renderIngredients(ingredients) {
+      const container = document.getElementById('ingredients');
+      container.innerHTML = ingredients.map(i => `
+        <div class="ingredient">
+          <span class="name">${i.name}</span>
+          <span class="stock">${i.stock}</span>
+        </div>`).join('');
+    }
+
+    function showMessage(text, isError) {
+      const el = document.getElementById('message');
+      el.className = 'message' + (isError ? ' error' : '');
+      el.textContent = text;
+      setTimeout(() => el.textContent = '', 4000);
+    }
+
+    async function makeDrink(encodedName) {
+      const res = await fetch(`/api/drinks/${encodedName}/make`, { method: 'POST' });
+      const data = await res.json();
+      showMessage(data.message, !res.ok);
+      renderDrinks(data.drinks);
+      renderIngredients(data.ingredients);
+    }
+
+    async function restock() {
+      const res = await fetch('/api/restock', { method: 'POST' });
+      const data = await res.json();
+      showMessage(data.message, !res.ok);
+      renderDrinks(data.drinks);
+      renderIngredients(data.ingredients);
+    }
+
+    loadData();
+  </script>
+</body>
+</html>
