@@ -1,8 +1,7 @@
 package com.cleancode;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
+import org.springframework.stereotype.Component;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -17,16 +16,11 @@ import static com.cleancode.IngredientName.STEAMED_MILK;
 import static com.cleancode.IngredientName.SUGAR;
 import static com.cleancode.IngredientName.WHIPPED_CREAM;
 
+@Component
 public class DrinkMachine {
 
   private final List<Drink> drinkList = new ArrayList<>();
   private final List<Ingredient> ingredientList = new ArrayList<>();
-
-  public static void main(String[] args) {
-    DrinkMachine drinkMachine = new DrinkMachine();
-    drinkMachine.displayInventoryAndMenu();
-    drinkMachine.startIO();
-  }
 
   public DrinkMachine() {
     ingredientList.add(new Ingredient(COFFEE, 0.75));
@@ -64,59 +58,24 @@ public class DrinkMachine {
     updateMakeable();
   }
 
-  public void startIO() {
-    BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
-    String input = "";
-
-    while (true) {
-      try {
-        input = reader.readLine().toLowerCase();
-        if (input.isBlank()) {
-          continue;
-        } else if (input.equals("q")) {
-          System.exit(0);
-        } else if (input.equals("r")) {
-          restockIngredients();
-          updateMakeable();
-        } else if (Integer.parseInt(input) > 0 && Integer.parseInt(input) <= drinkList.size()) {
-          makeDrink(drinkList.get(Integer.parseInt(input) - 1));
-        } else {
-          System.out.println("'" + input + "' was not valid. Choose from list above, or Q or R.");
-        }
-      } catch (IOException e) {
-        System.out.println("No idea why we got an IOException here." + e);
-      }
-    }
+  public List<Drink> getDrinkList() {
+    return Collections.unmodifiableList(drinkList);
   }
 
-  public void displayInventoryAndMenu() {
-    System.out.println("\nIngredient Inventory:\n");
-    for (Ingredient ingredient : ingredientList) {
-      System.out.println(ingredient.getName().displayName() + ", " + ingredient.getStock());
-    }
-
-    System.out.println("\nDrink Menu:\n");
-    int count = 1;
-    for (Drink d : drinkList) {
-      System.out.printf("%d,%s,$%.2f," + d.getMakeable() + "\n\n", count, d.getName(), d.getCost());
-      count++;
-    }
+  public List<Ingredient> getIngredientList() {
+    return Collections.unmodifiableList(ingredientList);
   }
 
   public void makeDrink(Drink drink) {
     if (drink.getMakeable()) {
-      System.out.println("Dispensing: " + drink.getName() + "\n");
       for (Ingredient ingredient : ingredientList) {
         Recipe recipe = drink.getRecipe();
         if (recipe.hasIngredient(ingredient)) {
           ingredient.setStock(ingredient.getStock() - recipe.quantityNeededFor(ingredient));
         }
       }
-    } else {
-      System.out.println("Out of stock: " + drink.getName() + "\n");
     }
     updateMakeable();
-    displayInventoryAndMenu();
   }
 
   public void restockIngredients() {
@@ -124,7 +83,6 @@ public class DrinkMachine {
       ingredient.setStock(10);
     }
     updateMakeable();
-    displayInventoryAndMenu();
   }
 
   private void updateMakeable() {
