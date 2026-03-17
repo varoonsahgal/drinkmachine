@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -27,29 +27,33 @@
   </style>
 </head>
 <body>
-  <h1>☕ Coffee Drink Machine</h1>
+  <h1>&#9749; Coffee Drink Machine</h1>
   <div id="message"></div>
 
   <h2>Drinks</h2>
-  <div id="drinks" class="drinks"></div>
+  <div id="drinks" class="drinks">
+    <div class="drink-card" th:each="drink : ${drinks}">
+      <h3 th:text="${drink.name}"></h3>
+      <div class="cost" th:text="${drink.formattedCost}"></div>
+      <button th:class="${drink.makeable} ? 'available' : 'unavailable'"
+              th:disabled="${!drink.makeable}"
+              th:data-name="${drink.name}"
+              onclick="makeDrink(this.dataset.name)"
+              th:text="${drink.makeable} ? 'Order' : 'Out of Stock'"></button>
+    </div>
+  </div>
 
   <h2>Ingredients</h2>
-  <div id="ingredients" class="ingredients"></div>
+  <div id="ingredients" class="ingredients">
+    <div class="ingredient" th:each="ingredient : ${ingredients}">
+      <span class="name" th:text="${ingredient.displayName}"></span>
+      <span class="stock" th:text="${ingredient.stock}"></span>
+    </div>
+  </div>
 
   <button id="restock-btn" onclick="restock()">Restock Ingredients</button>
 
   <script>
-    async function loadData() {
-      const [drinksRes, ingredientsRes] = await Promise.all([
-        fetch('/api/drinks'),
-        fetch('/api/ingredients')
-      ]);
-      const drinks = await drinksRes.json();
-      const ingredients = await ingredientsRes.json();
-      renderDrinks(drinks);
-      renderIngredients(ingredients);
-    }
-
     function renderDrinks(drinks) {
       const container = document.getElementById('drinks');
       container.innerHTML = drinks.map(d => `
@@ -57,7 +61,8 @@
           <h3>${d.name}</h3>
           <div class="cost">$${d.cost.toFixed(2)}</div>
           <button class="${d.makeable ? 'available' : 'unavailable'}"
-            onclick="${d.makeable ? `makeDrink('${encodeURIComponent(d.name)}')` : ''}"
+            data-name="${d.name}"
+            onclick="makeDrink(this.dataset.name)"
             ${d.makeable ? '' : 'disabled'}>
             ${d.makeable ? 'Order' : 'Out of Stock'}
           </button>
@@ -80,8 +85,8 @@
       setTimeout(() => el.textContent = '', 4000);
     }
 
-    async function makeDrink(encodedName) {
-      const res = await fetch(`/api/drinks/${encodedName}/make`, { method: 'POST' });
+    async function makeDrink(name) {
+      const res = await fetch(`/api/drinks/${encodeURIComponent(name)}/make`, { method: 'POST' });
       const data = await res.json();
       showMessage(data.message, !res.ok);
       renderDrinks(data.drinks);
@@ -95,8 +100,6 @@
       renderDrinks(data.drinks);
       renderIngredients(data.ingredients);
     }
-
-    loadData();
   </script>
 </body>
 </html>
