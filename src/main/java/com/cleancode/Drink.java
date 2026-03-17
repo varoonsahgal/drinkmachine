@@ -46,6 +46,10 @@ public class Drink implements Comparable<Drink> {
     return totalCost;
   }
 
+  public String getFormattedCost() {
+    return String.format("$%.2f", totalCost);
+  }
+
   public String getName() {
     return name;
   }

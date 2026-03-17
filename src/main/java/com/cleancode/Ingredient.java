@@ -31,4 +31,8 @@ public class Ingredient implements Comparable<Ingredient> {
     return name;
   }
 
+  public String getDisplayName() {
+    return name.displayName();
+  }
+
 }
