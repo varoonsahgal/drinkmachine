@@ -3,30 +3,54 @@ package com.cleancode;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
+
+import java.util.List;
 
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@SpringBootTest
-@AutoConfigureMockMvc
+@WebMvcTest(DrinkMachineController.class)
 class DrinkMachineControllerTest {
 
   @Autowired
   private MockMvc mockMvc;
 
+  @MockBean
+  private DrinkMachine drinkMachine;
+
+  private Drink cappuccino;
+  private Drink coffee;
+
   @BeforeEach
-  void restock() throws Exception {
-    mockMvc.perform(post("/api/restock"));
+  void setUp() {
+    Ingredient espresso = new Ingredient(IngredientName.ESPRESSO, 1.10);
+    Ingredient steamedMilk = new Ingredient(IngredientName.STEAMED_MILK, 0.35);
+    Ingredient foamedMilk = new Ingredient(IngredientName.FOAMED_MILK, 0.35);
+    Ingredient coffeeIngredient = new Ingredient(IngredientName.COFFEE, 0.75);
+    Ingredient sugar = new Ingredient(IngredientName.SUGAR, 0.25);
+    Ingredient cream = new Ingredient(IngredientName.CREAM, 0.25);
+
+    cappuccino = new Drink("Cappuccino", new Recipe(espresso, espresso, steamedMilk, foamedMilk));
+    cappuccino.setCost(2.15);
+    cappuccino.setMakeable(true);
+
+    coffee = new Drink("Coffee", new Recipe(coffeeIngredient, coffeeIngredient, coffeeIngredient, sugar, cream));
+    coffee.setCost(2.75);
+    coffee.setMakeable(true);
+
+    when(drinkMachine.getDrinkList()).thenReturn(List.of(cappuccino, coffee));
+    when(drinkMachine.getIngredientList()).thenReturn(List.of(espresso, steamedMilk, foamedMilk, coffeeIngredient, sugar, cream));
   }
 
   @Test
@@ -67,10 +91,7 @@ class DrinkMachineControllerTest {
 
   @Test
   void makeDrinkReturnsConflictWhenOutOfStock() throws Exception {
-    // Coffee recipe uses 3 units of coffee; with stock of 10, it runs out after 3 orders
-    for (int i = 0; i < 3; i++) {
-      mockMvc.perform(post("/api/drinks/Coffee/make")).andExpect(status().isOk());
-    }
+    coffee.setMakeable(false);
     mockMvc.perform(post("/api/drinks/Coffee/make"))
         .andExpect(status().isConflict())
         .andExpect(jsonPath("$.message", is("Out of stock: Coffee")));
