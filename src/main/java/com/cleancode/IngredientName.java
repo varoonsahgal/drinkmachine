@@ -32,7 +32,7 @@ public enum IngredientName {
     return DISPLAY_TO_INGREDIENT.get(ingredientDisplayName);
   }
 
-  String displayName() {
+  public String displayName() {
     return displayName;
   }
 
