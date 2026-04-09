@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -31,33 +31,52 @@
   <div id="message"></div>
 
   <h2>Drinks</h2>
-  <div id="drinks" class="drinks"></div>
+  <div id="drinks" class="drinks">
+    <div th:each="drink : ${drinks}" class="drink-card">
+      <h3 th:text="${drink.name}"></h3>
+      <div class="cost" th:text="'$' + ${#numbers.formatDecimal(drink.cost, 1, 2)}"></div>
+      <button th:classappend="${drink.makeable} ? 'available' : 'unavailable'"
+              th:disabled="${!drink.makeable}"
+              th:attr="data-name=${drink.name}"
+              th:text="${drink.makeable} ? 'Order' : 'Out of Stock'"></button>
+    </div>
+  </div>
 
   <h2>Ingredients</h2>
-  <div id="ingredients" class="ingredients"></div>
+  <div id="ingredients" class="ingredients">
+    <div th:each="ingredient : ${ingredients}" class="ingredient">
+      <span class="name" th:text="${ingredient.name.displayName()}"></span>
+      <span class="stock" th:text="${ingredient.stock}"></span>
+    </div>
+  </div>
 
   <button id="restock-btn" onclick="restock()">Restock Ingredients</button>
 
   <script>
-    async function loadData() {
-      const [drinksRes, ingredientsRes] = await Promise.all([
-        fetch('/api/drinks'),
-        fetch('/api/ingredients')
-      ]);
-      const drinks = await drinksRes.json();
-      const ingredients = await ingredientsRes.json();
-      renderDrinks(drinks);
-      renderIngredients(ingredients);
+    function escapeHtml(str) {
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
     }
+
+    document.getElementById('drinks').addEventListener('click', function(e) {
+      const btn = e.target.closest('button.available');
+      if (btn && btn.dataset.name) {
+        makeDrink(encodeURIComponent(btn.dataset.name));
+      }
+    });
 
     function renderDrinks(drinks) {
       const container = document.getElementById('drinks');
       container.innerHTML = drinks.map(d => `
         <div class="drink-card">
-          <h3>${d.name}</h3>
+          <h3>${escapeHtml(d.name)}</h3>
           <div class="cost">$${d.cost.toFixed(2)}</div>
           <button class="${d.makeable ? 'available' : 'unavailable'}"
-            onclick="${d.makeable ? `makeDrink('${encodeURIComponent(d.name)}')` : ''}"
+            data-name="${escapeHtml(d.name)}"
             ${d.makeable ? '' : 'disabled'}>
             ${d.makeable ? 'Order' : 'Out of Stock'}
           </button>
@@ -68,7 +87,7 @@
       const container = document.getElementById('ingredients');
       container.innerHTML = ingredients.map(i => `
         <div class="ingredient">
-          <span class="name">${i.name}</span>
+          <span class="name">${escapeHtml(i.name)}</span>
           <span class="stock">${i.stock}</span>
         </div>`).join('');
     }
@@ -95,8 +114,6 @@
       renderDrinks(data.drinks);
       renderIngredients(data.ingredients);
     }
-
-    loadData();
   </script>
 </body>
 </html>
