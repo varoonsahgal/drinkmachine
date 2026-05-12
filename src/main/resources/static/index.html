@@ -106,7 +106,9 @@
         return;
       }
 
-      resultEl.textContent = `You drank ${coffeesPerDay * days} coffees.`;
+      const totalCoffees = coffeesPerDay * days;
+      const displayValue = Number.isInteger(totalCoffees) ? totalCoffees : totalCoffees.toFixed(2);
+      resultEl.textContent = `You drank ${displayValue} coffees.`;
     }
 
     async function makeDrink(encodedName) {
