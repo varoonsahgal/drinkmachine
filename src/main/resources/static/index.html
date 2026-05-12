@@ -97,11 +97,15 @@
     }
 
     function calculateCoffees() {
-      const coffeesPerDay = Number(document.getElementById('coffees-per-day').value);
-      const days = Number(document.getElementById('days').value);
+      const coffeesPerDayValue = document.getElementById('coffees-per-day').value;
+      const daysValue = document.getElementById('days').value;
+      const coffeesPerDay = Number(coffeesPerDayValue);
+      const days = Number(daysValue);
       const resultEl = document.getElementById('coffee-result');
 
-      if (!Number.isFinite(coffeesPerDay) || !Number.isFinite(days) || coffeesPerDay < 0 || days < 0) {
+      if (coffeesPerDayValue === '' || daysValue === '' ||
+          !Number.isFinite(coffeesPerDay) || !Number.isFinite(days) ||
+          coffeesPerDay < 0 || days < 0) {
         resultEl.textContent = 'Please enter valid non-negative numbers.';
         return;
       }
