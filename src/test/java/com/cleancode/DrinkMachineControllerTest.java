@@ -8,6 +8,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
@@ -51,6 +52,15 @@ class DrinkMachineControllerTest {
   }
 
   @Test
+  void indexPageContainsCoffeeCalculator() throws Exception {
+    mockMvc.perform(get("/index.html"))
+        .andExpect(status().isOk())
+        .andExpect(content().string(containsString("Coffee Calculator")))
+        .andExpect(content().string(containsString("coffees-per-day")))
+        .andExpect(content().string(containsString("calculateCoffees()")));
+  }
+
+  @Test
   void makeDrinkReturnsDrinkNotFound() throws Exception {
     mockMvc.perform(post("/api/drinks/NonExistentDrink/make"))
         .andExpect(status().isNotFound());
@@ -85,4 +95,3 @@ class DrinkMachineControllerTest {
         .andExpect(jsonPath("$.ingredients", hasSize(greaterThan(0))));
   }
 }
-
